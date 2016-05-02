@@ -10,6 +10,10 @@ app.use(morgan('combined'));
 app.use(bodyParser.json());
 expressWs(app);
 
+app.get('/', function (req, res) {
+  res.send("Hello World!");
+});
+
 app.listen(8000, function () {
   console.log('Unit visualizer is listening on port: ' + PORT);
 });
