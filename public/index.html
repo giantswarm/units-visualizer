@@ -72,6 +72,7 @@
     <div id="chart"></div>
 
     <script>
+      var timeInterval = 30;
       var graph = new Rickshaw.Graph( {
         element: document.getElementById("chart"),
         min: -100,
@@ -79,9 +80,9 @@
         renderer: 'line',
         interpolation: 'linear',
         series: new Rickshaw.Series.FixedDuration([{ name: 'totalUnits' }], undefined, {
-          timeInterval: 30,
+          timeInterval: timeInterval,
           maxDataPoints: 1000,
-          timeBase: new Date().getTime() / 1000
+          timeBase: 0
         })
       });
 
@@ -117,22 +118,24 @@
 
       var socket = new WebSocket("ws://docker.dev:8000/stream");
       socket.onmessage = function(message){
-        currentValue = parseInt(document.getElementById("count").innerHTML);
-        var desiredValue = parseInt(message.data);
+        setTimeout(function() {
+          currentValue = parseInt(document.getElementById("count").innerHTML);
+          var desiredValue = parseInt(message.data);
 
-        while (currentValue != desiredValue) {
-          if (currentValue < desiredValue) {
-            currentValue += 1;
-            element = document.createElement("div");
-            element.classList.add('unit');
-            element.id = 'unit-' + currentValue
-            unitsContainer.appendChild(element);
-          } else {
-            document.getElementById("unit-" + currentValue).remove();
-            currentValue -= 1;
+          while (currentValue != desiredValue) {
+            if (currentValue < desiredValue) {
+              currentValue += 1;
+              element = document.createElement("div");
+              element.classList.add('unit');
+              element.id = 'unit-' + currentValue
+              unitsContainer.appendChild(element);
+            } else {
+              document.getElementById("unit-" + currentValue).remove();
+              currentValue -= 1;
+            }
           }
           countElement.innerHTML = currentValue;
-        }
+        }, 1);
       };
 
       socket.onopen = function () {
@@ -142,10 +145,12 @@
       function renderGraphLoop() {
         graph.series.addData({ totalUnits: currentValue });
         graph.render();
-        window.requestAnimationFrame(renderGraphLoop);
+        // window.requestAnimationFrame(renderGraphLoop);
       }
 
-      renderGraphLoop();
+      setInterval(renderGraphLoop, timeInterval);
+
+      // renderGraphLoop();
     </script>
   </body>
 </html>

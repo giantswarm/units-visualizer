@@ -7,7 +7,7 @@ build:
 	docker build -t oponder/unit-visualizer .
 
 simulate-up:
-	echo "POST http://docker.dev:8000/message" | vegeta attack -duration=5s -body=json_bodies/add1.json -rate=50 -header="Content-type:application/json" -output=/dev/null
+	echo "POST http://docker.dev:8000/message" | vegeta attack -duration=5s -body=json_bodies/add1.json -rate=200 -header="Content-type:application/json" -output=/dev/null
 
 simulate-down:
 	echo "POST http://docker.dev:8000/message" | vegeta attack -duration=5s -body=json_bodies/subtract1.json -rate=50 -header="Content-type:application/json" -output=/dev/null
