@@ -1,0 +1,151 @@
+<html>
+  <head>
+    <title>Units!</title>
+    <script src="/js/d3.js"></script>
+    <script src="/js/rickshaw.js"></script>
+    <link rel="stylesheet" href="/css/rickshaw.css" type="text/css">
+
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Roboto:100,300,700,300italic|Inconsolata:400,700" type="text/css">
+    <style>
+      body {
+        background-color: #234a61;
+        color: #fff;
+        font-family: Roboto,sans-serif;
+      }
+
+      h1 {
+        font-weight: 800;
+        font-size: 40px;
+        margin-bottom: 0px;
+        margin-top: 0px;
+      }
+
+      .counter span {
+        display: block;
+        font-size: 16px;;
+      }
+
+      .counter {
+        background-color: #30556a;
+        width: 200px;
+        border-radius: 6px;
+        padding: 10px 15px;
+        padding-top: 7px;
+        text-align: right;
+        position: fixed;
+        bottom: 5px;
+        right: 5px;
+      }
+
+      .unit {
+        width: 5px;
+        height: 5px;
+        background-color: #fff;
+        display: inline-block;
+        float: left;
+        margin: 1px;
+      }
+
+      #units {
+        background-color: #234a61;
+        z-index: 5;
+        width: 50%;
+        padding: 10px;
+        position: fixed;
+        right: 0px;
+        top: 0px;
+        bottom: 0px;
+        border-left: 1px solid #30556a;
+      }
+
+      #chart {
+        left: 0px;
+        top: 0px;
+        bottom: 0px;
+        right: 50%;
+        position: fixed;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="y_axis"></div>
+    <div id="chart"></div>
+
+    <script>
+      var graph = new Rickshaw.Graph( {
+        element: document.getElementById("chart"),
+        min: -100,
+        max: 10200,
+        renderer: 'line',
+        interpolation: 'linear',
+        series: new Rickshaw.Series.FixedDuration([{ name: 'totalUnits' }], undefined, {
+          timeInterval: 30,
+          maxDataPoints: 1000,
+          timeBase: new Date().getTime() / 1000
+        })
+      });
+
+      var xAxis = new Rickshaw.Graph.Axis.Time({
+          graph: graph
+      });
+
+      xAxis.render();
+
+      var yAxis = new Rickshaw.Graph.Axis.Y({
+          graph: graph
+      });
+
+      yAxis.render();
+    </script>
+
+
+    <div id="units">
+      <div class="counter">
+        <h1 id="count">0</h1>
+        <span>UNITS</span>
+      </div>
+    </div>
+
+    <script>
+      var padZero = function(number, digits) {
+        return Array(Math.max(digits - String(number).length + 1, 0)).join(0) + number;
+      }
+
+      var countElement = document.getElementById("count");
+      var unitsContainer = document.getElementById("units");
+      var currentValue = 0;
+
+      var socket = new WebSocket("ws://docker.dev:8000/stream");
+      socket.onmessage = function(message){
+        currentValue = parseInt(document.getElementById("count").innerHTML);
+        var desiredValue = parseInt(message.data);
+
+        while (currentValue != desiredValue) {
+          if (currentValue < desiredValue) {
+            currentValue += 1;
+            element = document.createElement("div");
+            element.classList.add('unit');
+            element.id = 'unit-' + currentValue
+            unitsContainer.appendChild(element);
+          } else {
+            document.getElementById("unit-" + currentValue).remove();
+            currentValue -= 1;
+          }
+          countElement.innerHTML = currentValue;
+        }
+      };
+
+      socket.onopen = function () {
+        socket.send('Ping'); // Send the message 'Ping' to the server
+      };
+
+      function renderGraphLoop() {
+        graph.series.addData({ totalUnits: currentValue });
+        graph.render();
+        window.requestAnimationFrame(renderGraphLoop);
+      }
+
+      renderGraphLoop();
+    </script>
+  </body>
+</html>
